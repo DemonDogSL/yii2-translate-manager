@@ -1,0 +1,171 @@
+<?php
+/**
+ * @author Lajos Molnar <lajax.m@gmail.com>
+ * @portedToBootstrap5 Cristian Garcia Copete <cristian@demondog.es>
+ */
+
+namespace DemonDogSL\translateManager\services\scanners;
+
+use Yii;
+use yii\console\controllers\MessageController;
+use yii\helpers\FileHelper;
+use yii\base\InvalidConfigException;
+use DemonDogSL\translateManager\services\Scanner;
+
+abstract class ScannerFile extends MessageController {
+
+    const EXTENSION = '*.php';
+    public $scanner;
+
+    /**
+     * @var \DemonDogSL\translateManager\Module TranslateManager Module
+     */
+    public $module;
+    protected static $files = ['*.php' => [], '*.js' => []];
+
+    /**
+     * @param Scanner $scanner
+     */
+    public function __construct(Scanner $scanner) {
+        parent::__construct('language', Yii::$app->getModule('translateManager'), [
+            'scanner' => $scanner,
+        ]);
+    }
+
+    /**
+     * @inheritdoc Initialise the $files static array.
+     */
+    public function init() {
+        $this->initFiles();
+        parent::init();
+    }
+
+    public function initFiles() {
+        if (!empty(self::$files[static::EXTENSION]) || !in_array(static::EXTENSION, $this->module->patterns)) {
+            return;
+        }
+        self::$files[static::EXTENSION] = [];
+        foreach ($this->_getRoots() as $root) {
+            $root = realpath($root);
+            Yii::trace('Scanning ' . static::EXTENSION . " files for language elements in: $root", 'translateManager');
+            $files = FileHelper::findFiles($root, [
+                'except' => $this->module->ignoredItems,
+                'only' => [static::EXTENSION],
+            ]);
+            self::$files[static::EXTENSION] = array_merge(self::$files[static::EXTENSION], $files);
+        }
+        self::$files[static::EXTENSION] = array_unique(self::$files[static::EXTENSION]);
+    }
+
+    /**
+     * @param string[] $translators Array of translator patterns to search (for example: `['::t']`).
+     * @param string $file Path of the file.
+     * @return bool
+     */
+    protected function containsTranslator($translators, $file) {
+        return preg_match(
+            '#(' . implode('\s*\()|(', array_map('preg_quote', $translators)) . '\s*\()#i',
+            file_get_contents($file)
+        ) > 0;
+    }
+
+    /**
+     * @param string $fileName name of the file to extract messages from
+     * @param array $options Definition of the parameters required to identify language elements.
+     * @param array $ignoreCategories message categories to ignore Yii 2.0.4
+     */
+    protected function extractMessages($fileName, $options, $ignoreCategories = []) {
+        $this->scanner = new Scanner();
+        $subject = file_get_contents($fileName);
+        if (static::EXTENSION !== '*.php') {
+            $subject = "<?php\n" . $subject;
+        }
+        foreach ($options['translator'] as $currentTranslator) {
+            $translatorTokens = token_get_all('<?php ' . $currentTranslator);
+            array_shift($translatorTokens);
+            $tokens = token_get_all($subject);
+            $this->checkTokens($options, $translatorTokens, $tokens);
+        }
+    }
+
+    /**
+     * @param array $options Definition of the parameters required to identify language elements.
+     * @param array $translatorTokens Translation identification
+     * @param array $tokens Tokens to search through
+     */
+    protected function checkTokens($options, $translatorTokens, $tokens) {
+        $this->scanner = new Scanner();
+        $translatorTokensCount = count($translatorTokens);
+        $matchedTokensCount = 0;
+        $buffer = [];
+        foreach ($tokens as $token) {
+            if ($matchedTokensCount < $translatorTokensCount) {
+                if ($this->tokensEqual($token, $translatorTokens[$matchedTokensCount])) {
+                    ++$matchedTokensCount;
+                } else {
+                    $matchedTokensCount = 0;
+                }
+            } elseif ($matchedTokensCount === $translatorTokensCount) {
+                if ($this->tokensEqual($options['end'], $token)) {
+                    $languageItems = $this->getLanguageItem($buffer);
+                    if ($languageItems) {
+                        $this->scanner->addLanguageItems($languageItems);
+                    }
+                    if (count($buffer) > 4 && $buffer[3] == ',') {
+                        array_splice($buffer, 0, 4);
+                        $buffer[] = $options['end'];
+                        $this->checkTokens($options, $translatorTokens, $buffer);
+                    }
+                    $matchedTokensCount = 0;
+                    $buffer = [];
+                } elseif ($token !== $options['begin'] && isset($token[0]) && !in_array($token[0],
+                        [T_WHITESPACE, T_COMMENT])
+                ) {
+                    $buffer[] = $token;
+                }
+            }
+        }
+    }
+
+    /**
+     * @param array $buffer
+     * @return array|null
+     */
+    abstract protected function getLanguageItem($buffer);
+
+    /**
+     * @return array
+     */
+    private function _getRoots() {
+        $directories = [];
+        if (is_string($this->module->root)) {
+            $root = Yii::getAlias($this->module->root);
+            if ($this->module->scanRootParentDirectory) {
+                $root = dirname($root);
+            }
+            $directories[] = $root;
+        } elseif (is_array($this->module->root)) {
+            foreach ($this->module->root as $root) {
+                $directories[] = Yii::getAlias($root);
+            }
+        } else {
+            throw new InvalidConfigException('Invalid `root` option value!');
+        }
+        return $directories;
+    }
+
+    /**
+     * @param string $category
+     * @return bool
+     */
+    protected function isValidCategory($category) {
+        if ($this->module->onlyCategories) {
+            return in_array($category, $this->module->onlyCategories);
+        }
+        if ($this->module->ignoredCategories) {
+            return !in_array($category, $this->module->ignoredCategories);
+        }
+        return true;
+    }
+
+}
