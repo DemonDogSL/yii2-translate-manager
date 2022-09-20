@@ -239,4 +239,3 @@ The MIT License (MIT). Please see [License](LICENSE.md) for more information.
 
 - [Original Translate Manager](https://github.com/lajax/yii2-translate-manager)
 - [Packagist](https://packagist.org/packages/demondogsl/yii2-translate-manager)
-- [Yii Extensions](http://www.yiiframework.com/extension/yii2-translate-manager)
