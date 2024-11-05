@@ -13,3 +13,14 @@ All notable changes to this project will be documented in this file.
  - Email: cristian@demondog.es
  - GitHub User: [KrishDemonDog](https://github.com/KrishDemonDog)
 
+## [v1.1]
+
+## 2024-05-11
+
+### Pagination Fix
+
+ - Fixed pagination in the translation list
+ - Name: Cristian Garcia Copete
+ - Email: cristian@demondog.es
+ - GitHub User: [KrishDemonDog](https://github.com/KrishDemonDog)
+

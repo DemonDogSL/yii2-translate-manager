@@ -136,6 +136,7 @@ class LanguageController extends Controller {
             'searchEmptyCommand' => $this->module->searchEmptyCommand,
         ]);
         $dataProvider = $searchModel->search(Yii::$app->request->getQueryParams());
+        $dataProvider->pagination->route = '/translateManager/language/translate';
         return $this->render('translate', [
             'dataProvider' => $dataProvider,
             'searchModel' => $searchModel,
