@@ -53,7 +53,9 @@ class ScannerDatabase {
             ->queryAll();
         $category = $this->_getCategory($tables);
         foreach ($data as $columns) {
-            $columns = array_map('trim', $columns);
+            $columns = array_map(function($value) {
+                return $value !== null ? trim($value) : null;
+            }, $columns);
             foreach ($columns as $column) {
                 $this->_scanner->addLanguageItem($category, $column);
             }

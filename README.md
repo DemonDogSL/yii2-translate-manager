@@ -4,7 +4,7 @@
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md)
 [![Total Downloads](https://img.shields.io/packagist/dt/demondogsl/yii2-translate-manager.svg?style=flat)](https://packagist.org/packages/demondogsl/yii2-translate-manager)
 
-This Extension is based in [lajax/yii2-translate-manager](https://github.com/lajax/yii2-translate-manager) that was ported for works with Bootstrap 5 by [KrishDemonDog](https://github.com/KrishDemonDog).
+This Extension is based in [lajax/yii2-translate-manager](https://github.com/lajax/yii2-translate-manager) that was ported for works with Bootstrap 5 and Php 8.3 by [KrishDemonDog](https://github.com/KrishDemonDog).
 
 ## Introduction
 

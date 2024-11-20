@@ -12,6 +12,8 @@ use DemonDogSL\translateManager\models\LanguageSource;
 
 class Scanner {
 
+    public $scanners = [];
+
     const CATEGORY_JAVASCRIPT = 'javascript';
     const CATEGORY_ARRAY = 'array';
     const CATEGORY_DATABASE = 'database';
